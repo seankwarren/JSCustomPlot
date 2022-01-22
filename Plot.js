@@ -1,5 +1,5 @@
 class Plot {
-    constructor(x,y,size,axisWeight,borderWeight,dataWeight,yBound,xBound,axisColor,borderColor,backgroundColor,dataColor
+    constructor(x,y,size,axisWeight,borderWeight,dataWeight,yBound,xBound,axisColor,borderColor,backgroundColor,dataColor,tickLength,tickSize
     ) {
         this.xData = x;
         this.yData = y;
@@ -19,9 +19,8 @@ class Plot {
         this.axisY;
         this.xTicks = [];
         this.yTicks = [];
-        this.tickLength = 5;
-        this.sizeXTick = 0.7;
-        this.sizeYTick = 0.7;
+        this.tickLength = tickLength;
+        this.tickSize = tickSize;
         this.graph_HTML = "";
 
         // assign other properties (xData_px,yData_px,axisX,axisY)
@@ -103,7 +102,7 @@ class Plot {
     getTickPositions() {
         // x-axis
         var px = 0;
-        var dx = Math.floor(this.sizeXTick/(this.xBound.max-this.xBound.min)*this.size.width);
+        var dx = Math.floor(this.tickSize.x/(this.xBound.max-this.xBound.min)*this.size.width);
         // get positive ticks
         px = this.axisX + dx;
         while (px < this.size.width) {
@@ -118,7 +117,7 @@ class Plot {
         }
 
         // y-axis
-        var dy = Math.floor(this.sizeYTick/(this.yBound.max-this.yBound.min)*this.size.height);
+        var dy = Math.floor(this.tickSize.y/(this.yBound.max-this.yBound.min)*this.size.height);
         // get positive ticks
         var px = this.axisY - dy;
         while (px > 0) {
@@ -145,10 +144,10 @@ class Plot {
     }
 
     drawTick(axis,px) {
-        if (axis === 0) {
+        if (axis === 0) { // x-axis
             this.graph_HTML +=
-            `<line x1="${px}" y1="${this.size.height-(this.size.height-this.axisY)}" x2="${px}" y2="${this.size.height- (this.size.height-this.axisY) - this.tickLength}" style="stroke:${this.axisColor};stroke-width:${this.axisWeight}"/>`
-        } else if (axis === 1) {
+            `<line x1="${px}" y1="${this.axisY}" x2="${px}" y2="${this.axisY - this.tickLength}" style="stroke:${this.axisColor};stroke-width:${this.axisWeight}"/>`
+        } else if (axis === 1) { // y-axis
             this.graph_HTML +=
             `<line x1="${this.axisX}" y1="${px}" x2="${this.axisX+this.tickLength}" y2="${px}" style="stroke:${this.axisColor};stroke-width:${this.axisWeight}"/>`
         }
@@ -169,23 +168,26 @@ function heightToPx (num,min,max,height) {
 
 
 function test() {
-    let x = [0,1,2,3,4,5];
-    let y = [0,2,3,2,1,2];
+    let x = [-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6];
+    let y = [-1,-1,-2,-2,-3,-1,0,2,3,2,1,2,2.5];
     let width = 500;
     let height = 320;
     let size = {width,height};
-    let axisWeight = 1.2;
-    let borderWeight = 1.2;
-    let dataWeight = 1.2;
-    let yBound = {min:-2.7,max:3.2};
-    let xBound = {min:-4.7,max:5.2};
+    let axisWeight = 1.5;
+    let borderWeight = 1.5;
+    let dataWeight = 1.5;
+    let yBound = {min:-3.2,max:3.2};
+    let xBound = {min:-5.2,max:5.2};
     let borderColor = "#444444";
     let backgroundColor = "#ffffff";
     let axisColor = "rgb(25,25,25)";
     let dataColor = "rgb(0,180,180)";
+    let tickLength = 6;
+    let tickSize = {x:.5,y:.5};
+    
 
     let myPlot = new Plot(x,y,size,axisWeight,borderWeight,dataWeight,yBound,
-        xBound,axisColor,borderColor,backgroundColor,dataColor);
+        xBound,axisColor,borderColor,backgroundColor,dataColor,tickLength,tickSize);
 }
 
 test();
