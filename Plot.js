@@ -1,5 +1,5 @@
 class Plot {
-    constructor(x,y,size,axisWeight,borderWeight,dataWeight,yBound,xBound,axisColor,borderColor,backgroundColor,dataColor,tickLength,tickSize
+    constructor(x,y,size,axisWeight,borderWeight,dataWeight,yBound,xBound,axisColor,borderColor,backgroundColor,dataColor,tickLength,tickSize, labelSize
     ) {
         this.xData = x;
         this.yData = y;
@@ -19,6 +19,8 @@ class Plot {
         this.axisY;
         this.xTicks = [];
         this.yTicks = [];
+        this.tickLabels = {x:[],y:[]};
+        this.labelSize = labelSize;
         this.tickLength = tickLength;
         this.tickSize = tickSize;
         this.graph_HTML = "";
@@ -50,15 +52,21 @@ class Plot {
 
     // convert x data values to their pixel values based on the defined bounds
     getXinPixel() {
-        for (var i=0;i<this.xData.length;i++){
-            this.xData_px[i] = widthToPx(this.xData[i],this.xBound.min,this.xBound.max,this.size.width);
+        var x = this.xData;
+        for (var i=0;i<x.length;i++){
+            // ****  CANT FIGURE OUT how to dereference xData_px from xData *****
+            this.xData_px[i] = widthToPx(x[i],this.xBound.min,this.xBound.max,this.size.width);
+            this.xData[i] = x[i];
         }
     }
 
     // converts y data values to their pixel values based on the defined bounds
     getYinPixel() {
-        for (var i=0;i<this.yData.length;i++){
-            this.yData_px[i] = heightToPx(this.yData[i],this.yBound.min,this.yBound.max,this.size.height);
+        var y = this.yData;
+        for (var i=0;i<y.length;i++){
+            // ****  CANT FIGURE OUT how to dereference yData_px from yData *****
+            this.yData_px[i] = heightToPx(y[i],this.yBound.min,this.yBound.max,this.size.height);
+            this.yData[i] = y[i];
         }
     }
 
@@ -76,11 +84,31 @@ class Plot {
         <line x1="0" y1="${this.axisY}" x2="${this.size.width}" y2="${this.axisY}" style="stroke:${this.axisColor};stroke-width:${this.axisWeight}" />\n`;
     }
 
+    // add axis ticks to svg
+    drawTicks() {
+
+        // draw x ticks
+        for (var i=0; i<this.xTicks.length; i++) {
+            this.addTick2SVG(0,this.xTicks[i]);
+            this.addTickLabel2SVG(0,this.xTicks[i],i); // label
+
+        }
+
+        // draw y ticks
+        for (var i=0; i<this.yTicks.length; i++) {
+            this.addTick2SVG(1,this.yTicks[i]);
+            this.addTickLabel2SVG(1,this.yTicks[i],i); // label
+        }
+    }
+
     // add data to svg
     addData2SVG() {
-        for (var i=1;i<this.xData.length;i++) {
-            this.graph_HTML +=  `<line x1="${this.xData_px[i-1]}" y1="${this.yData_px[i-1]}" x2="${this.xData_px[i]}" y2="${this.yData_px[i]}" style="stroke:${this.dataColor};stroke-width:${this.dataWeight}" />\n`
+        // **** Midway through converting to using path instead of lines
+        var pathString = "M " + (this.xData_px[0]) + " " + (this.yData_px[0]) + " ";
+        for (var i=0;i<this.xData.length;i++) {
+            pathString += ("L " + (this.xData_px[i])+ " " + (this.yData_px[i]) + " ");
         }
+        this.graph_HTML += `<path d="${pathString}" stroke="${this.dataColor}" stroke-width="${this.dataWeight}" fill="transparent"/>\n`
     }
 
     // format and append SVG to HTML
@@ -102,54 +130,85 @@ class Plot {
     getTickPositions() {
         // x-axis
         var px = 0;
-        var dx = Math.floor(this.tickSize.x/(this.xBound.max-this.xBound.min)*this.size.width);
-        // get positive ticks
-        px = this.axisX + dx;
+        var tx = 0;
+        var deltaX= Math.floor(this.tickSize.x/(this.xBound.max-this.xBound.min)*this.size.width);
+        
+        // get zero location
+        this.xTicks.push(this.axisX);
+        this.tickLabels.x.push(0);
+
+        // get positive ticks px positions
+        px = this.axisX + deltaX;
+        tx = this.tickSize.x
         while (px < this.size.width) {
             this.xTicks.push(px);
-            px += dx;
+            this.tickLabels.x.push(tx);
+            px += deltaX;
+            tx += this.tickSize.x;
         }
-        px = this.axisX - dx;
-        // get negative ticks
+        px = this.axisX - deltaX;
+        tx = -this.tickSize.x;
+
+        // get negative ticks px positions
         while (px > 0) {
             this.xTicks.unshift(px);
-            px -= dx;
+            this.tickLabels.x.unshift(tx);
+            px -= deltaX;
+            tx -= this.tickSize.x;
         }
 
         // y-axis
         var dy = Math.floor(this.tickSize.y/(this.yBound.max-this.yBound.min)*this.size.height);
-        // get positive ticks
-        var px = this.axisY - dy;
+        // get zero position
+        this.yTicks.push(this.axisY);
+        this.tickLabels.y.push(0);
+
+        // get positive tick px positions
+        px = this.axisY - dy;
+        tx = this.tickSize.y;
         while (px > 0) {
             this.yTicks.push(px);
+            this.tickLabels.y.push(tx)
             px -= dy;
+            tx += this.tickSize.y;
         }
-        // get negative ticks
+        
+        // get negative ticks px positions
         px = this.axisY + dy;
+        tx = -this.tickSize.y
         while (px < this.size.height) {
             this.yTicks.unshift(px);
+            this.tickLabels.y.unshift(tx);
             px += dy;
+            tx -= this.tickSize.y;
         }
     }
 
-    drawTicks() {
-        // draw x ticks
-        for (var i=0; i<this.xTicks.length; i++) {
-            this.drawTick(0,this.xTicks[i]);
-        }
-        // draw y ticks
-        for (var i=0; i<this.yTicks.length; i++) {
-            this.drawTick(1,this.yTicks[i]);
-        }
-    }
-
-    drawTick(axis,px) {
+    addTick2SVG(axis,px) {
         if (axis === 0) { // x-axis
             this.graph_HTML +=
-            `<line x1="${px}" y1="${this.axisY}" x2="${px}" y2="${this.axisY - this.tickLength}" style="stroke:${this.axisColor};stroke-width:${this.axisWeight}"/>`
+            `<line class="tick-marker" x1="${px}" y1="${this.axisY}" x2="${px}" y2="${this.axisY - this.tickLength}" style="stroke:${this.axisColor};stroke-width:${this.axisWeight}"/>`
         } else if (axis === 1) { // y-axis
             this.graph_HTML +=
-            `<line x1="${this.axisX}" y1="${px}" x2="${this.axisX+this.tickLength}" y2="${px}" style="stroke:${this.axisColor};stroke-width:${this.axisWeight}"/>`
+            `<line class="tick-marker" x1="${this.axisX}" y1="${px}" x2="${this.axisX+this.tickLength}" y2="${px}" style="stroke:${this.axisColor};stroke-width:${this.axisWeight}"/>`
+        }
+    }
+
+    addTickLabel2SVG(axis,px,i) {
+        //console.log(axis);
+        var adjZero = 0;
+        if (axis === 0) { // x-axis
+            if (this.tickLabels.x[i] === 0) adjZero = 0.7*this.labelSize;
+            this.graph_HTML +=
+            `<text class="tick-label" x="${px-adjZero}" 
+            y="${this.axisY+this.labelSize+this.axisWeight}" font-size="${this.labelSize}px" 
+            fill="${this.axisColor}" text-anchor="middle" font-weight="bold">${this.tickLabels.x[i]}</text>\n`;
+        }
+        if (axis === 1 && this.tickLabels.y[i] != 0) { // y-axis
+            this.graph_HTML +=
+            `<text class="tick-label" x="${this.axisX-2*this.axisWeight}" 
+            y="${px+this.labelSize/2-2*this.axisWeight}" font-size="${this.labelSize}px" 
+            fill="${this.axisColor}" text-anchor="end" font-weight="bold">${this.tickLabels.y[i]}</text>\n`;
         }
     }
 }
@@ -167,27 +226,3 @@ function heightToPx (num,min,max,height) {
 };
 
 
-function test() {
-    let x = [-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6];
-    let y = [-1,-1,-2,-2,-3,-1,0,2,3,2,1,2,2.5];
-    let width = 500;
-    let height = 320;
-    let size = {width,height};
-    let axisWeight = 1.5;
-    let borderWeight = 1.5;
-    let dataWeight = 1.5;
-    let yBound = {min:-3.2,max:3.2};
-    let xBound = {min:-5.2,max:5.2};
-    let borderColor = "#444444";
-    let backgroundColor = "#ffffff";
-    let axisColor = "rgb(25,25,25)";
-    let dataColor = "rgb(0,180,180)";
-    let tickLength = 6;
-    let tickSize = {x:.5,y:.5};
-    
-
-    let myPlot = new Plot(x,y,size,axisWeight,borderWeight,dataWeight,yBound,
-        xBound,axisColor,borderColor,backgroundColor,dataColor,tickLength,tickSize);
-}
-
-test();
