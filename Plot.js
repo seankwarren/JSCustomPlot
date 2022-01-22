@@ -17,13 +17,18 @@ class Plot {
         this.yBound = yBound;
         this.axisX;
         this.axisY;
+        this.xTicks = [];
+        this.yTicks = [];
+        this.tickLength = 5;
+        this.sizeXTick = 0.7;
+        this.sizeYTick = 0.7;
         this.graph_HTML = "";
-  
 
         // assign other properties (xData_px,yData_px,axisX,axisY)
         this.getAxisCoords();
         this.getXinPixel();
         this.getYinPixel();
+        this.getTickPositions();
 
         // draw
         this.draw();
@@ -33,6 +38,7 @@ class Plot {
     draw() {
         this.addBorder2SVG();
         this.addAxes2SVG();
+        this.drawTicks();
         this.addData2SVG();
         this.finalizeSVG();
     }
@@ -94,7 +100,62 @@ class Plot {
         base.appendChild(img);
     }
 
+    getTickPositions() {
+        // x-axis
+        var px = 0;
+        var dx = Math.floor(this.sizeXTick/(this.xBound.max-this.xBound.min)*this.size.width);
+        // get positive ticks
+        px = this.axisX + dx;
+        while (px < this.size.width) {
+            this.xTicks.push(px);
+            px += dx;
+        }
+        px = this.axisX - dx;
+        // get negative ticks
+        while (px > 0) {
+            this.xTicks.unshift(px);
+            px -= dx;
+        }
+
+        // y-axis
+        var dy = Math.floor(this.sizeYTick/(this.yBound.max-this.yBound.min)*this.size.height);
+        // get positive ticks
+        var px = this.axisY - dy;
+        while (px > 0) {
+            this.yTicks.push(px);
+            px -= dy;
+        }
+        // get negative ticks
+        px = this.axisY + dy;
+        while (px < this.size.height) {
+            this.yTicks.unshift(px);
+            px += dy;
+        }
+    }
+
+    drawTicks() {
+        // draw x ticks
+        for (var i=0; i<this.xTicks.length; i++) {
+            this.drawTick(0,this.xTicks[i]);
+        }
+        // draw y ticks
+        for (var i=0; i<this.yTicks.length; i++) {
+            this.drawTick(1,this.yTicks[i]);
+        }
+    }
+
+    drawTick(axis,px) {
+        if (axis === 0) {
+            this.graph_HTML +=
+            `<line x1="${px}" y1="${this.size.height-(this.size.height-this.axisY)}" x2="${px}" y2="${this.size.height- (this.size.height-this.axisY) - this.tickLength}" style="stroke:${this.axisColor};stroke-width:${this.axisWeight}"/>`
+        } else if (axis === 1) {
+            this.graph_HTML +=
+            `<line x1="${this.axisX}" y1="${px}" x2="${this.axisX+this.tickLength}" y2="${px}" style="stroke:${this.axisColor};stroke-width:${this.axisWeight}"/>`
+        }
+    }
 }
+
+        
 
 function widthToPx (num,min,max,width) {
     var xRange = max - min;
@@ -116,8 +177,8 @@ function test() {
     let axisWeight = 1.2;
     let borderWeight = 1.2;
     let dataWeight = 1.2;
-    let yBound = {min:-1,max:3.2};
-    let xBound = {min:-1,max:8};
+    let yBound = {min:-2.7,max:3.2};
+    let xBound = {min:-4.7,max:5.2};
     let borderColor = "#444444";
     let backgroundColor = "#ffffff";
     let axisColor = "rgb(25,25,25)";
